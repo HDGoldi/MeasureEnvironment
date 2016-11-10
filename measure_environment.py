@@ -4,36 +4,58 @@ from sense_hat import SenseHat
 sense = SenseHat()
 sense.clear()
 
-humidity = sense.get_humidity()
-print("Humidity: %s %%rH" % humidity)
-print(sense.humidity)
+class Data:
+    """Data from the SenseHat"""
+    def __init__(self, sensehat):
+        self.humidity = sensehat.get_humidity()
+        self.temperature_from_humidity = sensehat.get_temperature_from_humidity()
+        self.temperature_from_pressure = sensehat.get_temperature_from_pressure()
+        self.pressure = sensehat.get_pressure()
+        self.orientation = sensehat.get_orientation_radians()
+        self.compass = sensehat.get_compass_raw()
+        self.gyroscope = sensehat.get_gyroscope_raw()
+        self.accelerometer = sensehat.get_accelerometer_raw()
 
-temp1 = sense.get_temperature()
-print("Temperature: %s C" % temp1)
-print(sense.temp)
-print(sense.temperature)
+    def sql_fields(self):
+        result = "("
+        result += "humidity, pressure"
+        result += ", temperature_from_humidity, temperature_from_pressure"
+        result += ", orientation_pitch, orientation_roll, orientation_yaw"
+        result += ", compass_x, compass_y, compass_z"
+        result += ", gyroscope_pitch, gyroscope_roll, gyroscope_yaw"
+        result += ", accelerometer_pitch, accelerometer_roll, accelerometer_yaw"
+        result += ")"
+        return result;
 
-temp2 = sense.get_temperature_from_pressure()
-print("Temperature: %s C" % temp2)
+    def to_sql(self):
+        result = "("
+        result += str(self.humidity) + ", " + str(self.pressure)
+        result += ", " + str(self.temperature_from_humidity) + ", " + str(self.temperature_from_pressure)
+        result += ", " + str(self.orientation["pitch"]) + ", " + str(self.orientation["roll"]) + ", " + str(self.orientation["yaw"])
+        result += ", " + str(self.compass["x"]) + ", " + str(self.compass["y"]) + ", " + str(self.compass["z"])
+        result += ", " + str(self.gyroscope["x"]) + ", " + str(self.gyroscope["y"]) + ", " + str(self.gyroscope["z"])
+        result += ", " + str(self.accelerometer["x"]) + ", " + str(self.accelerometer["y"]) + ", " + str(self.accelerometer["z"])
+        result += ")"
+        return result
+ 
+def generate_sql_insert_statement(data):
+    statement = "INSERT INTO envdata" + data.sql_fields()
+    statement += " VALUES" + data.to_sql()
+    statement += ";"
+    return statement;
 
-pressure = sense.get_pressure()
-print("Pressure: %s Millibars" % pressure)
-print(sense.pressure)
+data = Data(sense)
 
-orientation = sense.get_orientation_radians()
-print("Orientationn p: {pitch}, r: {roll}, y: {yaw}".format(**orientation))
-print(sense.orientation_radians)
+print("Humidity: %s %%rH" % data.humidity)
+print("Temperature: %s C" % data.temperature_from_humidity)
+print("Temperature: %s C" % data.temperature_from_pressure)
+print("Pressure: %s Millibars" % data.pressure)
+print("Orientation p: {pitch}, r: {roll}, y: {yaw}".format(**data.orientation))
+print("Compass x: {x}, y: {y}, z: {z}".format(**data.compass))
+print("Gyroscope x: {x}, y: {y}, z: {z}".format(**data.gyroscope))
+print("Accelerometer x: {x}, y: {y}, z: {z}".format(**data.accelerometer))
 
-compass = sense.get_compass_raw()
-print("Compass x: {x}, y: {y}, z: {z}".format(**compass))
-print(sense.compass_raw)
-
-gyro = sense.get_gyroscope_raw()
-print("Gyroscope x: {x}, y: {y}, z: {z}".format(**gyro))
-print(sense.gyro)
-print(sense.gyroscope)
-
-accel = sense.get_accelerometer_raw()
-print("Accelerometer x: {x}, y: {y}, z: {z}".format(**accel))
-print(sense.accel)
-print(sense.accelerometer)
+print("")
+print(generate_sql_insert_statement(data))
+print("")
+    
