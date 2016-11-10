@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import socket
 from sense_hat import SenseHat
 
 sense = SenseHat()
@@ -18,7 +19,7 @@ class Data:
 
     def sql_fields(self):
         result = "("
-        result += "humidity, pressure"
+        result += "sensor, humidity, pressure"
         result += ", temperature_from_humidity, temperature_from_pressure"
         result += ", orientation_pitch, orientation_roll, orientation_yaw"
         result += ", compass_x, compass_y, compass_z"
@@ -29,7 +30,7 @@ class Data:
 
     def to_sql(self):
         result = "("
-        result += str(self.humidity) + ", " + str(self.pressure)
+        result += "'" + socket.gethostname() + "', " + str(self.humidity) + ", " + str(self.pressure)
         result += ", " + str(self.temperature_from_humidity) + ", " + str(self.temperature_from_pressure)
         result += ", " + str(self.orientation["pitch"]) + ", " + str(self.orientation["roll"]) + ", " + str(self.orientation["yaw"])
         result += ", " + str(self.compass["x"]) + ", " + str(self.compass["y"]) + ", " + str(self.compass["z"])
@@ -56,6 +57,6 @@ print("Gyroscope x: {x}, y: {y}, z: {z}".format(**data.gyroscope))
 print("Accelerometer x: {x}, y: {y}, z: {z}".format(**data.accelerometer))
 
 print("")
-print(generate_sql_insert_statement(data))
+statement = generate_sql_insert_statement(data)
+print(statement)
 print("")
-    
