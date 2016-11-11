@@ -1,9 +1,19 @@
 #!/usr/bin/python3
+import configparser
 import socket
 from sense_hat import SenseHat
 
 sense = SenseHat()
 sense.clear()
+
+config = configparser.ConfigParser()
+
+config['DEFAULT'] = {
+    'user': '',
+    'password': '',
+    'host': 'localhost',
+    'database': 'envmon'
+}
 
 class Data:
     """Data from the SenseHat"""
