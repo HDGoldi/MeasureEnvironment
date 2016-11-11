@@ -1,5 +1,7 @@
 #!/usr/bin/python3
+import datetime
 import socket
+import time
 from sense_hat import SenseHat
 
 sense = SenseHat()
@@ -8,6 +10,8 @@ sense.clear()
 class Data:
     """Data from the SenseHat"""
     def __init__(self, sensehat):
+        self.sensor = socket.gethostname()
+        self.timestamp = datetime.datetime.utcnow().isoformat(' ')
         self.humidity = sensehat.get_humidity()
         self.temperature_from_humidity = sensehat.get_temperature_from_humidity()
         self.temperature_from_pressure = sensehat.get_temperature_from_pressure()
@@ -19,7 +23,7 @@ class Data:
 
     def sql_fields(self):
         result = "("
-        result += "sensor, humidity, pressure"
+        result += "time, sensor, humidity, pressure"
         result += ", temperature_from_humidity, temperature_from_pressure"
         result += ", orientation_pitch, orientation_roll, orientation_yaw"
         result += ", compass_x, compass_y, compass_z"
@@ -30,7 +34,7 @@ class Data:
 
     def to_sql(self):
         result = "("
-        result += "'" + socket.gethostname() + "', " + str(self.humidity) + ", " + str(self.pressure)
+        result += "'" + self.timestamp + "', '" + self.sensor + "', " + str(self.humidity) + ", " + str(self.pressure)
         result += ", " + str(self.temperature_from_humidity) + ", " + str(self.temperature_from_pressure)
         result += ", " + str(self.orientation["pitch"]) + ", " + str(self.orientation["roll"]) + ", " + str(self.orientation["yaw"])
         result += ", " + str(self.compass["x"]) + ", " + str(self.compass["y"]) + ", " + str(self.compass["z"])
@@ -38,25 +42,32 @@ class Data:
         result += ", " + str(self.accelerometer["x"]) + ", " + str(self.accelerometer["y"]) + ", " + str(self.accelerometer["z"])
         result += ")"
         return result
- 
-def generate_sql_insert_statement(data):
-    statement = "INSERT INTO envdata" + data.sql_fields()
-    statement += " VALUES" + data.to_sql()
-    statement += ";"
-    return statement;
+        
+    def __str__(self):
+        result = "Sensor: %s\n" % self.sensor
+        result += "Timestamp: %s\n" % self.timestamp
+        result += "Humidity: %s %%rH\n" % self.humidity
+        result += "Temperature: %s C\n" % self.temperature_from_humidity
+        result += "Temperature: %s C\n" % self.temperature_from_pressure
+        result += "Pressure: %s Millibars\n" % self.pressure
+        result += "Orientation p: {pitch}, r: {roll}, y: {yaw}\n".format(**self.orientation)
+        result += "Compass x: {x}, y: {y}, z: {z}\n".format(**self.compass)
+        result += "Gyroscope x: {x}, y: {y}, z: {z}\n".format(**self.gyroscope)
+        result += "Accelerometer x: {x}, y: {y}, z: {z}\n".format(**self.accelerometer)
+        return result
 
 data = Data(sense)
 
-print("Humidity: %s %%rH" % data.humidity)
-print("Temperature: %s C" % data.temperature_from_humidity)
-print("Temperature: %s C" % data.temperature_from_pressure)
-print("Pressure: %s Millibars" % data.pressure)
-print("Orientation p: {pitch}, r: {roll}, y: {yaw}".format(**data.orientation))
-print("Compass x: {x}, y: {y}, z: {z}".format(**data.compass))
-print("Gyroscope x: {x}, y: {y}, z: {z}".format(**data.gyroscope))
-print("Accelerometer x: {x}, y: {y}, z: {z}".format(**data.accelerometer))
+print(data)
+statement = "INSERT INTO envdata" + data.sql_fields()
+statement += " VALUES" + data.to_sql()
 
-print("")
-statement = generate_sql_insert_statement(data)
+for x in range(3):
+    time.sleep(15)
+    data = Data(sense)
+    statement += ", " + data.to_sql()
+    print(data)
+    print("")
+
 print(statement)
 print("")
