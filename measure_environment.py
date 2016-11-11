@@ -1,8 +1,19 @@
 #!/usr/bin/python3
+import configparser
 import datetime
+import mysql.connector
 import socket
 import time
 from sense_hat import SenseHat
+
+config = configparser.ConfigParser()
+config['DEFAULT'] = {
+    'username': 'default',
+    'password': 'default',
+    'host': 'localhost',
+    'database': 'envmon'
+    
+}
 
 sense = SenseHat()
 sense.clear()
@@ -71,3 +82,21 @@ for x in range(3):
 
 print(statement)
 print("")
+
+print("Connectinng to server")
+ctx = mysql.connector.connect(user=config['DEFAULT']['username'],
+                              password=config['DEFAULT']['password'],
+                              host =config['DEFAULT']['host'],
+                              database=config['DEFAULT']['database'])
+
+cursor = ctx.cursor()
+
+print("Inserting data")
+cursor.execute(statement)
+
+print("Commiting")
+ctx.commit()
+
+print("Closing")
+cursor.close()
+ctx.close();
